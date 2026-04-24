@@ -1,0 +1,665 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0f14;
+    --surface: #161820;
+    --card: #1c1e28;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8e9f0;
+    --muted: #7a7d91;
+    --accent: #7c6dfa;
+    --accent2: #fa6d6d;
+    --accent3: #6dfab8;
+    --accent4: #fadc6d;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --coil-a: #7c6dfa;
+    --coil-b: #fa6d6d;
+    --coil-c: #6dfab8;
+    --coil-d: #fadc6d;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  .app { max-width: 900px; margin: 0 auto; padding: 24px 16px 40px; }
+
+  .header { margin-bottom: 28px; }
+  .header h1 { font-family: var(--mono); font-size: 22px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); }
+  .header p { font-size: 14px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+  .badge { display: inline-block; font-family: var(--mono); font-size: 10px; background: rgba(124,109,250,0.15); color: var(--accent); border: 1px solid rgba(124,109,250,0.3); border-radius: 4px; padding: 2px 8px; margin-right: 8px; letter-spacing: 0.5px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media(max-width:600px){ .grid { grid-template-columns:1fr; } }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .card-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* MOTOR SVG */
+  .motor-wrap { display: flex; justify-content: center; align-items: center; padding: 8px 0 0; }
+
+  /* COIL INDICATORS */
+  .coils { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .coil-item { background: var(--surface); border-radius: 8px; padding: 10px 12px; border: 1px solid var(--border); display: flex; align-items: center; gap: 10px; transition: border-color 0.15s; }
+  .coil-item.active { border-color: var(--active-color, #7c6dfa); background: rgba(255,255,255,0.03); }
+  .coil-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; background: var(--coil-color); opacity: 0.3; transition: opacity 0.15s, box-shadow 0.15s; }
+  .coil-item.active .coil-dot { opacity: 1; box-shadow: 0 0 8px var(--coil-color); }
+  .coil-name { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .coil-item.active .coil-name { color: var(--text); }
+  .coil-current { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .coil-item.active .coil-current { color: var(--text); }
+
+  /* STEP SEQUENCE TABLE */
+  .seq-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 11px; }
+  th { color: var(--muted); text-align: center; padding: 6px 8px; border-bottom: 1px solid var(--border); font-weight: 400; }
+  td { text-align: center; padding: 6px 8px; border-bottom: 1px solid var(--border); color: var(--muted); transition: background 0.15s; }
+  tr.current-step td { background: rgba(124,109,250,0.12); color: var(--text); }
+  tr.current-step td:first-child { border-left: 2px solid var(--accent); }
+  .dot-on { color: var(--text); font-size: 13px; }
+  .dot-off { opacity: 0.2; }
+
+  /* CONTROLS */
+  .controls { display: flex; flex-direction: column; gap: 12px; }
+  .ctrl-row { display: flex; align-items: center; gap: 12px; }
+  .ctrl-label { font-size: 12px; color: var(--muted); min-width: 80px; }
+  
+  input[type=range] {
+    flex: 1; -webkit-appearance: none; appearance: none;
+    height: 4px; background: var(--border2); border-radius: 2px; outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px;
+    border-radius: 50%; background: var(--accent); cursor: pointer;
+    border: 2px solid var(--bg); box-shadow: 0 0 6px rgba(124,109,250,0.5);
+  }
+  .ctrl-val { font-family: var(--mono); font-size: 11px; color: var(--text); min-width: 50px; text-align: right; }
+
+  .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+  button {
+    font-family: var(--sans); font-size: 13px; font-weight: 500;
+    border-radius: 8px; border: 1px solid var(--border2); background: var(--surface);
+    color: var(--text); padding: 8px 16px; cursor: pointer; transition: all 0.15s; outline: none;
+  }
+  button:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.2); }
+  button.active-btn { background: var(--accent); border-color: transparent; color: #fff; }
+  button:active { transform: scale(0.97); }
+  .btn-step { border-color: var(--accent); color: var(--accent); font-family: var(--mono); }
+  .btn-step:hover { background: rgba(124,109,250,0.1); }
+  .btn-rev { border-color: var(--accent2); color: var(--accent2); font-family: var(--mono); }
+  .btn-rev:hover { background: rgba(250,109,109,0.1); }
+
+  /* WAVEFORM */
+  .wave-wrap { overflow: hidden; position: relative; }
+  .wave-track { display: flex; flex-direction: column; gap: 4px; }
+  .wave-lane { display: flex; align-items: center; gap: 8px; }
+  .wave-lbl { font-family: var(--mono); font-size: 10px; width: 16px; text-align: right; flex-shrink: 0; }
+  .wave-canvas-wrap { flex: 1; position: relative; }
+  canvas { display: block; width: 100%; border-radius: 4px; }
+
+  /* STATS */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  .stat { background: var(--surface); border-radius: 8px; padding: 10px; text-align: center; }
+  .stat-val { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--text); }
+  .stat-lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* MODE EXPLANATION */
+  .mode-info { background: var(--surface); border-radius: 8px; border-left: 2px solid var(--accent); padding: 10px 14px; font-size: 12px; color: var(--muted); line-height: 1.6; margin-top: 8px; }
+  .mode-info strong { color: var(--text); }
+
+  .full-card { grid-column: 1 / -1; }
+  .sep { height: 1px; background: var(--border); margin: 8px 0; }
+
+  @keyframes spin-indicator { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  .running-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent3); margin-right: 6px; }
+  .running-dot.run { animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 4px var(--accent3)} 50%{opacity:0.4;box-shadow:none} }
+</style>
+
+<div class="app">
+  <div class="header">
+    <div style="margin-bottom:8px">
+      <span class="badge">SIMULATION</span>
+      <span class="badge" style="background:rgba(109,250,184,0.1);color:var(--accent3);border-color:rgba(109,250,184,0.3)">INTERACTIVE</span>
+    </div>
+    <h1>Stepper Motor</h1>
+    <p>A stepper motor divides a full rotation into equal discrete steps by energizing coils in sequence. Use the controls below to explore how each mode works.</p>
+  </div>
+
+  <div class="grid">
+    <!-- MOTOR VISUALIZATION -->
+    <div class="card">
+      <div class="card-label">
+        <span class="running-dot" id="run-dot"></span>
+        Motor Cross-section
+      </div>
+      <div class="motor-wrap">
+        <svg id="motor-svg" width="220" height="220" viewBox="-110 -110 220 220">
+          <defs>
+            <radialGradient id="rg" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#2a2c3a"/>
+              <stop offset="100%" stop-color="#1c1e28"/>
+            </radialGradient>
+            <filter id="glow-filter">
+              <feGaussianBlur stdDeviation="3" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <!-- Stator outline -->
+          <circle r="105" fill="#131520" stroke="#2a2d3e" stroke-width="1"/>
+          <circle r="95" fill="#1c1e28" stroke="#2a2d3e" stroke-width="0.5"/>
+          <!-- Stator teeth (8 poles) -->
+          <g id="stator-poles"></g>
+          <!-- Air gap -->
+          <circle r="52" fill="url(#rg)" stroke="#0e0f14" stroke-width="1.5"/>
+          <!-- Rotor -->
+          <g id="rotor">
+            <circle r="48" fill="#1a1c28" stroke="#2a2d3e" stroke-width="1"/>
+            <!-- Rotor teeth (50 = 50-tooth typical) displayed as 8 for clarity -->
+            <g id="rotor-teeth"></g>
+            <!-- Center hub -->
+            <circle r="10" fill="#0e0f14" stroke="#2a2d3e" stroke-width="1"/>
+            <!-- Shaft indicator -->
+            <line x1="0" y1="0" x2="0" y2="-38" stroke="#e8e9f0" stroke-width="2" stroke-linecap="round" id="shaft-line"/>
+            <circle cx="0" cy="-38" r="3" fill="#e8e9f0" id="shaft-dot"/>
+          </g>
+          <!-- Coil labels on poles -->
+          <g id="coil-arcs"></g>
+          <!-- Center text -->
+          <text x="0" y="4" text-anchor="middle" font-family="Space Mono" font-size="7" fill="#7a7d91" id="angle-text">0.0°</text>
+        </svg>
+      </div>
+      <!-- COIL STATUS -->
+      <div class="coils" id="coil-indicators">
+        <div class="coil-item" id="ci-A" style="--active-color:#7c6dfa;--coil-color:#7c6dfa">
+          <div class="coil-dot"></div>
+          <span class="coil-name">Coil A</span>
+          <span class="coil-current" id="cc-A">0 A</span>
+        </div>
+        <div class="coil-item" id="ci-B" style="--active-color:#fa6d6d;--coil-color:#fa6d6d">
+          <div class="coil-dot"></div>
+          <span class="coil-name">Coil B</span>
+          <span class="coil-current" id="cc-B">0 A</span>
+        </div>
+        <div class="coil-item" id="ci-C" style="--active-color:#6dfab8;--coil-color:#6dfab8">
+          <div class="coil-dot"></div>
+          <span class="coil-name">Coil /A</span>
+          <span class="coil-current" id="cc-C">0 A</span>
+        </div>
+        <div class="coil-item" id="ci-D" style="--active-color:#fadc6d;--coil-color:#fadc6d">
+          <div class="coil-dot"></div>
+          <span class="coil-name">Coil /B</span>
+          <span class="coil-current" id="cc-D">0 A</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <!-- STEP SEQUENCE -->
+      <div class="card">
+        <div class="card-label">Energization Sequence</div>
+        <div class="seq-wrap">
+          <table id="seq-table">
+            <thead>
+              <tr><th>Step</th><th style="color:#7c6dfa">A</th><th style="color:#fa6d6d">B</th><th style="color:#6dfab8">/A</th><th style="color:#fadc6d">/B</th><th>Angle</th></tr>
+            </thead>
+            <tbody id="seq-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="card">
+        <div class="card-label">Live Telemetry</div>
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-val" id="s-angle">0.0°</div>
+            <div class="stat-lbl">Angle</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val" id="s-steps">0</div>
+            <div class="stat-lbl">Steps</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val" id="s-rpm">0</div>
+            <div class="stat-lbl">RPM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WAVEFORM CARD -->
+    <div class="card full-card">
+      <div class="card-label">Coil Excitation Waveform</div>
+      <div class="wave-track" id="wave-track">
+        <div class="wave-lane"><span class="wave-lbl" style="color:#7c6dfa">A</span><div class="wave-canvas-wrap"><canvas id="wc-A" height="28"></canvas></div></div>
+        <div class="wave-lane"><span class="wave-lbl" style="color:#fa6d6d">B</span><div class="wave-canvas-wrap"><canvas id="wc-B" height="28"></canvas></div></div>
+        <div class="wave-lane"><span class="wave-lbl" style="color:#6dfab8">/A</span><div class="wave-canvas-wrap"><canvas id="wc-C" height="28"></canvas></div></div>
+        <div class="wave-lane"><span class="wave-lbl" style="color:#fadc6d">/B</span><div class="wave-canvas-wrap"><canvas id="wc-D" height="28"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- CONTROLS CARD -->
+    <div class="card full-card">
+      <div class="card-label">Controls</div>
+      <div class="controls">
+        <!-- Mode -->
+        <div class="ctrl-row">
+          <span class="ctrl-label">Drive Mode</span>
+          <div class="btn-group" id="mode-btns">
+            <button class="active-btn" onclick="setMode('full')">Full Step</button>
+            <button onclick="setMode('half')">Half Step</button>
+            <button onclick="setMode('wave')">Wave Drive</button>
+            <button onclick="setMode('micro')">Microstepping</button>
+          </div>
+        </div>
+        <div class="mode-info" id="mode-desc"></div>
+        <div class="sep"></div>
+        <!-- Step control -->
+        <div class="ctrl-row">
+          <span class="ctrl-label">Manual</span>
+          <button class="btn-step" onclick="manualStep(1)">▶ Step FWD</button>
+          <button class="btn-rev" onclick="manualStep(-1)">◀ Step REV</button>
+        </div>
+        <!-- Speed -->
+        <div class="ctrl-row">
+          <span class="ctrl-label">Auto Speed</span>
+          <input type="range" id="speed-sl" min="1" max="30" value="0" oninput="setSpeed(this.value)">
+          <span class="ctrl-val" id="speed-val">Stopped</span>
+        </div>
+        <div class="ctrl-row" style="gap:8px">
+          <button onclick="setSpeed(0);document.getElementById('speed-sl').value=0" style="font-size:12px">⏹ Stop</button>
+          <button onclick="resetMotor()" style="font-size:12px;color:var(--muted)">↺ Reset</button>
+          <span style="font-size:11px;color:var(--muted);margin-left:auto">steps/s: <span id="sps-label" style="color:var(--text);font-family:var(--mono)">0</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────────
+const MODES = {
+  full: {
+    label: 'Full Step (Two-Phase)',
+    desc: '<strong>Full Step (Two-Phase On)</strong> — Two coils energized simultaneously. Provides <strong>maximum torque</strong> since both phases contribute. Each step = 1.8° for a 200-step motor. Most common mode for high-torque applications.',
+    seq: [
+      [1,1,0,0],
+      [0,1,1,0],
+      [0,0,1,1],
+      [1,0,0,1],
+    ],
+    anglePerStep: 1.8
+  },
+  half: {
+    label: 'Half Step',
+    desc: '<strong>Half Step</strong> — Alternates between one and two coils energized, giving <strong>double the resolution</strong> (0.9° per step). Smoother motion but ~70% torque during single-phase steps. Great for precision positioning.',
+    seq: [
+      [1,0,0,0],
+      [1,1,0,0],
+      [0,1,0,0],
+      [0,1,1,0],
+      [0,0,1,0],
+      [0,0,1,1],
+      [0,0,0,1],
+      [1,0,0,1],
+    ],
+    anglePerStep: 0.9
+  },
+  wave: {
+    label: 'Wave Drive (One-Phase)',
+    desc: '<strong>Wave Drive</strong> — Only <strong>one coil at a time</strong> is energized. Uses the least power (~50% of full step) but produces less torque. Good for low-power battery applications where speed is not critical.',
+    seq: [
+      [1,0,0,0],
+      [0,1,0,0],
+      [0,0,1,0],
+      [0,0,0,1],
+    ],
+    anglePerStep: 1.8
+  },
+  micro: {
+    label: 'Microstepping (8x)',
+    desc: '<strong>Microstepping</strong> — Coil currents are varied <strong>sinusoidally</strong> to position the rotor between full steps. This simulation shows 8 microsteps per full step (0.225° each). Dramatically smoother motion with virtually zero vibration.',
+    seq: (() => {
+      const steps = [];
+      const N = 8;
+      for (let i = 0; i < N; i++) {
+        const a = Math.cos(2*Math.PI*i/N);
+        const b = Math.sin(2*Math.PI*i/N);
+        steps.push([
+          Math.max(0, a).toFixed(2)*1,
+          Math.max(0, b).toFixed(2)*1,
+          Math.max(0, -a).toFixed(2)*1,
+          Math.max(0, -b).toFixed(2)*1,
+        ]);
+      }
+      return steps;
+    })(),
+    anglePerStep: 0.225
+  }
+};
+
+let mode = 'full';
+let stepIdx = 0;
+let totalSteps = 0;
+let direction = 1;
+let angle = 0;
+let autoInterval = null;
+let autoSpeed = 0;
+let waveHistory = [[],[],[],[]]; // ring buffer per coil
+const WAVE_LEN = 64;
+
+// precompute rotor angle at each seq step (cumulative)
+function getModeAngle() {
+  return MODES[mode].anglePerStep * totalSteps;
+}
+
+// ── SEQUENCE TABLE ─────────────────────────────────────────────────────────────
+function buildTable() {
+  const m = MODES[mode];
+  const body = document.getElementById('seq-body');
+  body.innerHTML = '';
+  m.seq.forEach((row, i) => {
+    const tr = document.createElement('tr');
+    tr.id = 'tr-' + i;
+    const angleVal = (m.anglePerStep * i).toFixed(3);
+    tr.innerHTML = `<td>${i+1}</td>` +
+      row.map((v,ci) => {
+        const colors = ['#7c6dfa','#fa6d6d','#6dfab8','#fadc6d'];
+        if(mode === 'micro') {
+          return `<td style="color:${colors[ci]};font-size:10px">${(v*100).toFixed(0)}%</td>`;
+        }
+        return `<td>${v ? `<span class="dot-on" style="color:${colors[ci]}">●</span>` : `<span class="dot-off">○</span>`}</td>`;
+      }).join('') +
+      `<td style="font-size:10px">${angleVal}°</td>`;
+    body.appendChild(tr);
+  });
+}
+
+// ── MOTOR SVG ─────────────────────────────────────────────────────────────────
+function buildMotorSVG() {
+  const colors = ['#7c6dfa','#fa6d6d','#6dfab8','#fadc6d'];
+  const poleAngles = [90, 0, 270, 180]; // degrees from 12 o'clock for A,B,/A,/B pole pairs
+
+  // Stator poles (8 poles: A, B, /A, /B and their opposites)
+  const sp = document.getElementById('stator-poles');
+  sp.innerHTML = '';
+  for(let i = 0; i < 4; i++) {
+    const baseAngle = poleAngles[i];
+    for(let side = 0; side < 2; side++) {
+      const a = (baseAngle + side*180) * Math.PI / 180;
+      const x1 = Math.cos(a)*52, y1 = Math.sin(a)*52;
+      const x2 = Math.cos(a)*90, y2 = Math.sin(a)*90;
+      const w = 14;
+      const perp = a + Math.PI/2;
+      const px = Math.cos(perp)*w/2, py = Math.sin(perp)*w/2;
+      const rect = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+      rect.setAttribute('points',
+        `${x1+px},${y1+py} ${x2+px},${y2+py} ${x2-px},${y2-py} ${x1-px},${y1-py}`
+      );
+      rect.setAttribute('fill', '#1c1e28');
+      rect.setAttribute('stroke', colors[i]);
+      rect.setAttribute('stroke-width', '0.5');
+      rect.setAttribute('opacity', '0.6');
+      rect.setAttribute('data-pole', i);
+      sp.appendChild(rect);
+    }
+  }
+
+  // Coil arc decorations
+  const ca = document.getElementById('coil-arcs');
+  ca.innerHTML = '';
+  for(let i = 0; i < 4; i++) {
+    const a = poleAngles[i] * Math.PI / 180;
+    const tx = Math.cos(a) * 75;
+    const ty = Math.sin(a) * 75;
+    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+    text.setAttribute('x', tx);
+    text.setAttribute('y', ty);
+    text.setAttribute('text-anchor','middle');
+    text.setAttribute('dominant-baseline','middle');
+    text.setAttribute('font-family','Space Mono');
+    text.setAttribute('font-size','8');
+    text.setAttribute('fill', colors[i]);
+    text.setAttribute('data-coil-label', i);
+    text.textContent = ['A','B','/A','/B'][i];
+    ca.appendChild(text);
+  }
+
+  // Rotor teeth (10 visible teeth for clarity)
+  const rt = document.getElementById('rotor-teeth');
+  rt.innerHTML = '';
+  const nTeeth = 10;
+  for(let i = 0; i < nTeeth; i++) {
+    const a = (i / nTeeth) * 2 * Math.PI;
+    const x1 = Math.cos(a)*34, y1 = Math.sin(a)*34;
+    const x2 = Math.cos(a)*46, y2 = Math.sin(a)*46;
+    const perp = a + Math.PI/2;
+    const w = 5;
+    const px = Math.cos(perp)*w/2, py = Math.sin(perp)*w/2;
+    const tooth = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    tooth.setAttribute('points',
+      `${x1+px},${y1+py} ${x2+px},${y2+py} ${x2-px},${y2-py} ${x1-px},${y1-py}`
+    );
+    tooth.setAttribute('fill','#2a2d3e');
+    tooth.setAttribute('stroke','#3a3d52');
+    tooth.setAttribute('stroke-width','0.5');
+    rt.appendChild(tooth);
+  }
+}
+
+// ── UPDATE DISPLAY ─────────────────────────────────────────────────────────────
+function updateDisplay() {
+  const m = MODES[mode];
+  const seq = m.seq;
+  const curSeq = seq[stepIdx % seq.length];
+  const colors = ['#7c6dfa','#fa6d6d','#6dfab8','#fadc6d'];
+
+  // Rotate rotor
+  const rotorAngle = angle;
+  const rotor = document.getElementById('rotor');
+  rotor.setAttribute('transform', `rotate(${rotorAngle})`);
+
+  // Angle text
+  document.getElementById('angle-text').textContent = (((angle%360)+360)%360).toFixed(1)+'°';
+
+  // Stator pole glow
+  const poles = document.querySelectorAll('[data-pole]');
+  poles.forEach(p => {
+    const i = parseInt(p.getAttribute('data-pole'));
+    const v = curSeq[i];
+    p.setAttribute('opacity', v > 0 ? (0.5 + v*0.5).toString() : '0.2');
+    p.setAttribute('fill', v > 0 ? colors[i]+'22' : '#1c1e28');
+  });
+
+  // Shaft glow based on active coils
+  const totalActive = curSeq.reduce((a,b)=>a+b,0);
+  document.getElementById('shaft-line').setAttribute('stroke', totalActive > 0 ? '#e8e9f0' : '#4a4d60');
+  document.getElementById('shaft-dot').setAttribute('fill', totalActive > 0 ? '#e8e9f0' : '#4a4d60');
+
+  // Coil indicators
+  ['A','B','C','D'].forEach((c,i) => {
+    const v = curSeq[i];
+    const el = document.getElementById('ci-' + c);
+    const cc = document.getElementById('cc-' + c);
+    if(v > 0) {
+      el.classList.add('active');
+      cc.textContent = (v * 2.0).toFixed(1) + ' A';
+    } else {
+      el.classList.remove('active');
+      cc.textContent = '0 A';
+    }
+  });
+
+  // Sequence table highlight
+  const rows = document.querySelectorAll('#seq-body tr');
+  rows.forEach((r,i) => {
+    r.classList.toggle('current-step', i === (stepIdx % seq.length));
+  });
+  // Scroll active row into view
+  const activeRow = document.getElementById('tr-' + (stepIdx % seq.length));
+  if(activeRow) activeRow.scrollIntoView({block:'nearest',behavior:'smooth'});
+
+  // Stats
+  document.getElementById('s-angle').textContent = (((angle%360)+360)%360).toFixed(1)+'°';
+  document.getElementById('s-steps').textContent = Math.abs(totalSteps);
+  const rpm = autoSpeed > 0 ? ((autoSpeed / seq.length) * 60 / 360 * m.anglePerStep).toFixed(1) : '0';
+  document.getElementById('s-rpm').textContent = autoSpeed > 0 ?
+    (autoSpeed * m.anglePerStep / 360 * 60).toFixed(1) : '0';
+
+  // Waveform
+  const vals = curSeq;
+  for(let i = 0; i < 4; i++) {
+    waveHistory[i].push(vals[i]);
+    if(waveHistory[i].length > WAVE_LEN) waveHistory[i].shift();
+  }
+  drawWaveforms();
+}
+
+function drawWaveforms() {
+  const ids = ['wc-A','wc-B','wc-C','wc-D'];
+  const colors = ['#7c6dfa','#fa6d6d','#6dfab8','#fadc6d'];
+  ids.forEach((id, i) => {
+    const canvas = document.getElementById(id);
+    if(!canvas) return;
+    const w = canvas.offsetWidth || 400;
+    const h = canvas.height;
+    canvas.width = w;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0,0,w,h);
+    
+    // background
+    ctx.fillStyle = '#131520';
+    ctx.fillRect(0,0,w,h);
+
+    // grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 0.5;
+    for(let g = 0; g <= 4; g++) {
+      const x = (g/4)*w;
+      ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.beginPath(); ctx.moveTo(0,h/2); ctx.lineTo(w,h/2); ctx.stroke();
+
+    const hist = waveHistory[i];
+    if(hist.length < 2) return;
+    
+    // fill
+    ctx.beginPath();
+    const pad = 4;
+    hist.forEach((v, j) => {
+      const x = (j / (WAVE_LEN-1)) * w;
+      const y = pad + (1-v) * (h - pad*2);
+      if(j===0) ctx.moveTo(x, h-pad);
+      else if(j===1) ctx.lineTo(x, y);
+      ctx.lineTo(x, y);
+    });
+    ctx.lineTo(w, h-pad);
+    ctx.closePath();
+    ctx.fillStyle = colors[i] + '22';
+    ctx.fill();
+
+    // line
+    ctx.beginPath();
+    hist.forEach((v, j) => {
+      const x = (j / (WAVE_LEN-1)) * w;
+      const y = pad + (1-v) * (h - pad*2);
+      if(j===0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = colors[i];
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // cursor line (rightmost sample)
+    const cx = ((hist.length-1) / (WAVE_LEN-1)) * w;
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2,3]);
+    ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,h); ctx.stroke();
+    ctx.setLineDash([]);
+  });
+}
+
+// ── CONTROLS ────────────────────────────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  stepIdx = 0;
+  document.querySelectorAll('#mode-btns button').forEach(b => {
+    b.classList.toggle('active-btn', b.textContent.toLowerCase().includes(m) ||
+      (m==='full'&&b.textContent.includes('Full')) ||
+      (m==='half'&&b.textContent.includes('Half')) ||
+      (m==='wave'&&b.textContent.includes('Wave')) ||
+      (m==='micro'&&b.textContent.includes('Micro'))
+    );
+  });
+  document.getElementById('mode-desc').innerHTML = MODES[m].desc;
+  buildTable();
+  updateDisplay();
+}
+
+function manualStep(dir) {
+  direction = dir;
+  const seq = MODES[mode].seq;
+  stepIdx = ((stepIdx + dir) % seq.length + seq.length) % seq.length;
+  totalSteps += dir;
+  angle += MODES[mode].anglePerStep * dir;
+  updateDisplay();
+}
+
+function setSpeed(v) {
+  autoSpeed = parseInt(v);
+  const label = document.getElementById('speed-val');
+  const spsLabel = document.getElementById('sps-label');
+  spsLabel.textContent = autoSpeed;
+  if(autoSpeed === 0) {
+    label.textContent = 'Stopped';
+    clearInterval(autoInterval);
+    autoInterval = null;
+    document.getElementById('run-dot').classList.remove('run');
+  } else {
+    const ms = Math.max(1000/autoSpeed, 16);
+    label.textContent = autoSpeed + ' steps/s';
+    clearInterval(autoInterval);
+    autoInterval = setInterval(() => manualStep(1), ms);
+    document.getElementById('run-dot').classList.add('run');
+  }
+}
+
+function resetMotor() {
+  clearInterval(autoInterval); autoInterval = null;
+  stepIdx = 0; totalSteps = 0; angle = 0; autoSpeed = 0;
+  document.getElementById('speed-sl').value = 0;
+  document.getElementById('speed-val').textContent = 'Stopped';
+  document.getElementById('sps-label').textContent = '0';
+  document.getElementById('run-dot').classList.remove('run');
+  waveHistory = [[],[],[],[]];
+  updateDisplay();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+buildMotorSVG();
+setMode('full');
+updateDisplay();
+
+// Resize waveform canvases on load
+window.addEventListener('load', () => { drawWaveforms(); });
+window.addEventListener('resize', () => { drawWaveforms(); });
+</script>
